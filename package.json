@@ -24,6 +24,7 @@
   "dependencies": {
     "chalk": "^1.1.1",
     "cordova-serve": "^1.0.0",
+    "minimist": "^1.2.0",
     "replacestream": "^4.0.0",
     "send": "timbarham/send#transform",
     "taco-simulate-server": "^0.1.3",
