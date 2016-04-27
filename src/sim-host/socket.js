@@ -1,8 +1,9 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
+var telemetry = require('../../node_modules/taco-simulate-server/src/client-common/clientTelemetryHelper'); // TODO: Clean this up after taco-simulate and taco-simulate-server are merged
 
 var socket;
 
-module.exports.initialize = function (pluginHandlers) {
+module.exports.initialize = function (pluginHandlers, serviceToPluginMap) {
     socket = io();
     module.exports.socket = socket;
 
@@ -17,8 +18,8 @@ module.exports.initialize = function (pluginHandlers) {
             throw 'Exec called on simulation host without an index specified';
         }
 
-        var success = data.hasSuccess? getSuccess(index) : null;
-        var failure = data.hasFail? getFailure(index) : null;
+        var success = data.hasSuccess ? getSuccess(index) : null;
+        var failure = data.hasFail ? getFailure(index) : null;
 
         var service = data.service;
         if (!service) {
@@ -33,12 +34,16 @@ module.exports.initialize = function (pluginHandlers) {
         console.log('Exec ' + service + '.' + action + ' (index: ' + index + ')');
 
         var handler = pluginHandlers[service] && pluginHandlers[service][action];
+        var telemetryProps = { pluginId: serviceToPluginMap[service], service: service, action: action };
+
         if (!handler) {
-            socket.emit('telemetry', {event: 'exec', props: {handled: 'none', service: service, action: action}});
+            telemetryProps.handled = 'none';
+            telemetry.sendClientTelemetry(socket, 'exec', telemetryProps);
             handler = pluginHandlers['*']['*'];
             handler(success, failure, service, action, data.args);
         } else {
-            socket.emit('telemetry', {event: 'exec', props: {handled: 'sim-host', service: service, action: action}});
+            telemetryProps.handled = 'sim-host';
+            telemetry.sendClientTelemetry(socket, 'exec', telemetryProps);
             handler(success, failure, data.args);
         }
     });
@@ -51,7 +56,7 @@ module.exports.initialize = function (pluginHandlers) {
 function getSuccess(index) {
     return function (result) {
         console.log('Success callback for index: ' + index + '; result: ' + result);
-        var data = {index: index, result: result};
+        var data = { index: index, result: result };
         socket.emit('exec-success', data);
     };
 }
@@ -59,7 +64,7 @@ function getSuccess(index) {
 function getFailure(index) {
     return function (error) {
         console.log('Failure callback for index: ' + index + '; error: ' + error);
-        var data = {index: index, error: error};
+        var data = { index: index, error: error };
         socket.emit('exec-failure', data);
     };
 }
