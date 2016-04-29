@@ -4,7 +4,8 @@ var db = require('db'),
     Messages = require('messages'),
     customElements = require('./custom-elements'),
     socket = require('./socket'),
-    dialog = require('dialog');
+    dialog = require('dialog'),
+    telemetry = require('../../node_modules/taco-simulate-server/src/client-common/clientTelemetryHelper'); // TODO: Clean this up after taco-simulate and taco-simulate-server are merged
 
 var plugins;
 var pluginHandlers = {};
@@ -91,7 +92,7 @@ function initializePlugins() {
 
     Object.keys(plugins).forEach(function (pluginId) {
         try {
-            plugins[pluginId].initialize && plugins[pluginId].initialize();
+            plugins[pluginId].initialize && plugins[pluginId].initialize({ telemetryHelper: telemetry, socket: socket.socket });
         } catch (e) {
             console.error('Error initializing plugin ' + pluginId);
             console.error(e);
